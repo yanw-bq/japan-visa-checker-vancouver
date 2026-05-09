@@ -1,0 +1,2 @@
+playwright>=1.45
+win10toast>=0.9

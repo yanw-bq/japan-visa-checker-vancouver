@@ -1,0 +1,87 @@
+name: check
+
+on:
+  schedule:
+    # Every 15 minutes. GitHub cron is best-effort — runs may be delayed or
+    # occasionally skipped during high load. Minimum interval allowed is 5 min.
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+# Only one run at a time; cancel older queued runs so we don't pile up.
+concurrency:
+  group: visa-check
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Cache Playwright's browser binaries (~170 MB) between runs.
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+
+      - name: Install Playwright Chromium
+        run: python -m playwright install --with-deps chromium
+
+      # Restore previous run's state so we only alert on changes.
+      # Key includes run_id so each run writes a fresh cache entry; restore-keys
+      # falls back to the most recent previous entry.
+      - name: Restore state cache
+        id: state-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            last_state.json
+            earlier_state.json
+          key: visa-state-${{ github.run_id }}
+          restore-keys: |
+            visa-state-
+
+      - name: Run checker
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
+        run: python check_visa.py
+
+      - name: Save state cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            last_state.json
+            earlier_state.json
+          key: visa-state-${{ github.run_id }}
+
+      # Upload last.html as an artifact for debugging when selectors break.
+      - name: Upload debug artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: last-html-${{ github.run_id }}
+          path: last.html
+          if-no-files-found: ignore
+          retention-days: 7
