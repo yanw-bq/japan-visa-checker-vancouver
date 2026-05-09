@@ -60,6 +60,40 @@ jobs:
           restore-keys: |
             visa-state-
 
+      - name: Diagnose secrets (safe — no values printed)
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
+        run: |
+          python - <<'EOF'
+          import os, hashlib, re
+          def report(name, v):
+              if v is None:
+                  print(f"{name}: <unset>"); return
+              b = v.encode("utf-8")
+              sha = hashlib.sha256(b).hexdigest()[:12]
+              # shape checks only — do NOT print the value
+              shape = {
+                  "len": len(v),
+                  "bytes_len": len(b),
+                  "has_space": " " in v,
+                  "has_tab": "\t" in v,
+                  "has_cr": "\r" in v,
+                  "has_lf": "\n" in v,
+                  "has_quote": any(c in v for c in "\"'`"),
+                  "leading_ws": v != v.lstrip(),
+                  "trailing_ws": v != v.rstrip(),
+                  "all_ascii": v.isascii(),
+                  "all_lower_alpha": bool(re.fullmatch(r"[a-z]+", v)),
+                  "looks_email": "@" in v and "." in v.split("@")[-1],
+              }
+              print(f"{name}: sha256_12={sha} shape={shape}")
+          report("GMAIL_USER", os.environ.get("GMAIL_USER"))
+          report("GMAIL_APP_PASSWORD", os.environ.get("GMAIL_APP_PASSWORD"))
+          report("NOTIFY_TO", os.environ.get("NOTIFY_TO"))
+          EOF
+
       - name: Run checker
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
