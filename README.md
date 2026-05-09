@@ -14,7 +14,6 @@ Runs every 15 minutes on **GitHub Actions** (free for public repos). Can also be
 | File | Purpose |
 |---|---|
 | `check_visa.py` | Main checker |
-| `heartbeat.py` | Optional daily heartbeat (local only; not wired into Actions) |
 | `requirements.txt` | `playwright` |
 | `.github/workflows/check.yml` | 15-minute scheduled GitHub Actions workflow |
 
