@@ -21,13 +21,19 @@ Runtime state (`last_state.json`, `earlier_state.json`, `last.html`) is git-igno
 
 ## Configure the "earlier than" cutoff
 
-Edit the top of `check_visa.py`:
+The "earlier-than" alert fires when any open slot appears strictly before this date. Two ways to configure it (the variable takes precedence):
 
-```python
-EARLIER_THAN = "2026-06-08"   # YYYY-MM-DD; alerts only on slots strictly before this
-```
+- **Recommended — GitHub repo variable (no commit required):**
+  Go to **Settings → Secrets and variables → Actions → Variables → New repository variable**, name it `EARLIER_THAN`, value in `YYYY-MM-DD` form (e.g. `2026-06-08`). Or via CLI:
+  ```bash
+  gh variable set EARLIER_THAN --body "2026-06-08"
+  ```
+  The next scheduled run picks up the new value.
 
-Commit and push; the next scheduled run picks it up.
+- **Fallback — default in the workflow file:**
+  If the variable is unset, `check.yml` falls back to a hard-coded default (currently `2026-06-08`). Edit that default in `.github/workflows/check.yml` and commit.
+
+For local runs, set the `EARLIER_THAN` environment variable before invoking `check_visa.py`; if unset, the script uses the same default.
 
 ## GitHub Actions setup
 

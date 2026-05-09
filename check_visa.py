@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright
 
 URL = "https://cgjvancouver.rsvsys.jp/reservations/calendar"
 WEEKS_AHEAD = 6
-EARLIER_THAN = "2026-06-08"  # alert only if slot strictly before this date (your booking day)
+EARLIER_THAN = os.environ.get("EARLIER_THAN", "2026-06-08")  # alert only if slot strictly before this date (YYYY-MM-DD)
 STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "last_state.json")
 EARLIER_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "earlier_state.json")
 
