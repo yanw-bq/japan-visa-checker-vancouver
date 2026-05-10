@@ -2,9 +2,11 @@ name: check
 
 on:
   schedule:
-    # Every 15 minutes. GitHub cron is best-effort — runs may be delayed or
-    # occasionally skipped during high load. Minimum interval allowed is 5 min.
-    - cron: "*/15 * * * *"
+    # Every 5 minutes. GitHub cron is best-effort — during high load (especially
+    # at the top of the hour) scheduled runs are often delayed or skipped, and
+    # free-tier repos are deprioritized first. In practice expect 2–6 runs/hour,
+    # not a steady 12. Minimum interval allowed is 5 min.
+    - cron: "*/5 * * * *"
   workflow_dispatch: {} # allow manual runs from the Actions tab
 
 # Only one run at a time; cancel older queued runs so we don't pile up.
